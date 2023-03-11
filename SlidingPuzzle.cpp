@@ -11,9 +11,6 @@ struct node {
     int w;     // 存储当前状态的步数
     string path;
     vector<int> previous;
-    friend bool operator<(const node& a, const node& b) {
-        return a.w + a.p.size() > b.w + b.p.size();
-    }
 };
 
 unordered_map<string, bool> vis;
@@ -42,7 +39,6 @@ int same_digits(string a) { // 有多少个数字和goal相同
     }
     return cnt;
 }
-
 // 枚举当前状态下所有可行的移动方式
 vector<node> getNext(node x) {
     vector<node> res;
@@ -56,15 +52,7 @@ vector<node> getNext(node x) {
             t.w++;
             t.previous.push_back(same_digits(x.p));
             if (!vis.count(t.p)) {
-                string output;
-                for (int i = 0; i < 4; i++) {
-                    for (int j = 0; j < 4; j++) {
-                        output += x.p[i * 4 + j];
-                        output += ' ';
-                    }
-                    output += '\n';
-                }
-                t.path = x.path + '\n' + output;
+                t.path = x.path + char(i + '0');
                 res.push_back(t);
                 vis[t.p] = 1;
             }
@@ -74,7 +62,7 @@ vector<node> getNext(node x) {
 }
 
 int nodes, score;
-
+string directions[] = { "↑","↓","←","→" };
 int bfs(node start) {
     queue<node> q;
     nodes = 0;
@@ -89,14 +77,21 @@ int bfs(node start) {
         score = max(score, same_digits(x.p));
         if (steps < x.w) {
             steps = x.w;
-            cout << "info depth " << x.w - 1 << " nodes " << nodes << " score " << score << " time " << clock() - start_time << endl;
-            if (x.w % 2 == 0) // 定期清除一下map
-                vis.clear();
+            int time_used = clock() - start_time;
+            cout << "info depth " << x.w - 1 << " nodes " << nodes << " score " << score << " time " << time_used << " nps " << nodes * 1000 / (time_used + 1) << endl;
         }
         q.pop();
         if (check(x.p)) {
+            int merged_steps = 0;
+            cout << "bestmove ";
+            for (int i = 0; i < x.path.size(); i++) {
+                if (i > 0 && x.path[i] != x.path[i - 1])
+                    merged_steps++;
+                cout << directions[x.path[i] - '0'];
+            }
+            cout << endl;
             cout << "steps: " << x.w << endl;
-            cout << x.path << endl << x.p << endl;
+            cout << "steps (merged): " << merged_steps << endl;
             return 0;
         }
         vector<node> nexts = getNext(x);
@@ -107,12 +102,12 @@ int bfs(node start) {
                 maxn = max(same_digits(nexts[i].p), max(same_digits(x.p), max(x.previous.front(), x.previous[x.previous.size() - 2])));
             if (nexts[i].w > 7 && maxn <= 1) // 剪枝
                 continue;
-            int scoreMax = score - 3;
+            int scoreMin = score - 3;
             if (score > 8)
-                scoreMax = score - 4;
+                scoreMin = score - 4;
             if (score > 11)
-                scoreMax = score - 5;
-            if (nexts[i].w > 10 && maxn <= scoreMax)
+                scoreMin = score - 5;
+            if (nexts[i].w > 10 && maxn <= scoreMin)
                 continue;
             q.push(nexts[i]);
         }
@@ -121,6 +116,8 @@ int bfs(node start) {
 }
 
 int main() {
+    cout << "Digital Sliding Puzzle v1.1" << endl;
+    cout << "id author New Horizons" << endl;
     node start;
     start.p = "                ";
     for (int i = 0; i < 4; i++) {
